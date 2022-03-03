@@ -36,7 +36,7 @@ namespace Datadog.Sketches.Stores
         }
 
         /// <inheritdoc />
-        protected override int GetNewLength(int newMinIndex, int newMaxIndex)
+        protected override long GetNewLength(int newMinIndex, int newMaxIndex)
         {
             return Math.Min(base.GetNewLength(newMinIndex, newMaxIndex), _maxNumBins);
         }

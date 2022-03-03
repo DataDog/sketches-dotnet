@@ -4,12 +4,14 @@
 // </copyright>
 
 using System;
+using System.Diagnostics;
 
 namespace Datadog.Sketches.Stores
 {
     /// <summary>
     /// A pair of index and count.
     /// </summary>
+    [DebuggerDisplay("({Index}, {Count})")]
     public readonly struct Bin : IEquatable<Bin>
     {
         /// <summary>

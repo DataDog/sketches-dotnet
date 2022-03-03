@@ -71,7 +71,7 @@ namespace Datadog.Sketches.Stores
         /// <inheritdoc />
         protected override void Adjust(int newMinIndex, int newMaxIndex)
         {
-            if (newMaxIndex - newMinIndex + 1 > Counts.Length)
+            if ((long)newMaxIndex - newMinIndex + 1 > Counts.Length)
             {
                 // The range of indices is too wide, buckets of lowest indices need to be collapsed
                 newMaxIndex = newMinIndex + Counts.Length - 1;
@@ -106,6 +106,13 @@ namespace Datadog.Sketches.Stores
                         MaxIndex = newMaxIndex;
                     }
                 }
+
+                MinIndex = newMinIndex;
+                IsCollapsed = true;
+            }
+            else
+            {
+                CenterCounts(newMinIndex, newMaxIndex);
             }
         }
 

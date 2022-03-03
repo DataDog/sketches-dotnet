@@ -182,7 +182,7 @@ namespace Datadog.Sketches.Stores
         /// <inheritdoc />
         public override IEnumerable<Bin> EnumerateAscending()
         {
-            for (var i = MinIndex; i <= MaxIndex; i++)
+            for (var i = MinIndex; i >= MinIndex && i <= MaxIndex; i++)
             {
                 var count = Counts[i - Offset];
 
@@ -196,7 +196,7 @@ namespace Datadog.Sketches.Stores
         /// <inheritdoc />
         public override IEnumerable<Bin> EnumerateDescending()
         {
-            for (var i = MaxIndex; i >= MinIndex; i--)
+            for (var i = MaxIndex; i >= MinIndex && i <= MaxIndex; i--)
             {
                 var count = Counts[i - Offset];
 
@@ -269,7 +269,7 @@ namespace Datadog.Sketches.Stores
 
             if (IsEmpty())
             {
-                var initialLength = GetNewLength(newMinIndex, newMaxIndex);
+                var initialLength = (int)GetNewLength(newMinIndex, newMaxIndex);
 
                 if (Counts == null || initialLength >= Counts.Length)
                 {
@@ -281,7 +281,7 @@ namespace Datadog.Sketches.Stores
                 MaxIndex = newMaxIndex;
                 Adjust(newMinIndex, newMaxIndex);
             }
-            else if (newMinIndex >= Offset && newMaxIndex < Offset + Counts.Length)
+            else if (newMinIndex >= Offset && newMaxIndex < (long)Offset + Counts.Length)
             {
                 MinIndex = newMinIndex;
                 MaxIndex = newMaxIndex;
@@ -290,7 +290,7 @@ namespace Datadog.Sketches.Stores
             {
                 // To avoid shifting too often when nearing the capacity of the array,
                 // we may grow it before we actually reach the capacity.
-                var newLength = GetNewLength(newMinIndex, newMaxIndex);
+                var newLength = (int)GetNewLength(newMinIndex, newMaxIndex);
 
                 if (newLength > Counts.Length)
                 {
@@ -312,9 +312,9 @@ namespace Datadog.Sketches.Stores
             MaxIndex = newMaxIndex;
         }
 
-        protected virtual int GetNewLength(int newMinIndex, int newMaxIndex)
+        protected virtual long GetNewLength(int newMinIndex, int newMaxIndex)
         {
-            var desiredLength = newMaxIndex - newMinIndex + 1;
+            var desiredLength = (long)newMaxIndex - newMinIndex + 1;
 
             return (((desiredLength + _arrayLengthOverhead - 1) / _arrayLengthGrowthIncrement) + 1) * _arrayLengthGrowthIncrement;
         }

@@ -9,98 +9,92 @@ using System.Linq;
 using Datadog.Sketches.Mappings;
 using Datadog.Sketches.Stores;
 using FluentAssertions;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Sketches.Tests
 {
     public class DDSketchTests
     {
-        private const double FloatingPointAcceptableError = 1e-10;
+        internal const double FloatingPointAcceptableError = 1e-10;
 
-        public static IEnumerable<object[]> GetConstantTestCases()
+        public static IEnumerable<double[]> GetConstantTestCases()
         {
             // Positive
-            yield return new object[] { new double[] { 0 } };
-            yield return new object[] { new double[] { 1 } };
-            yield return new object[] { new double[] { 10 } };
-            yield return new object[] { new double[] { 1, 1, 1 } };
-            yield return new object[] { new double[] { 10, 10, 10 } };
-            yield return new object[] { Enumerable.Repeat(2.0, 10_000).ToArray() };
-            yield return new object[] { new double[] { 10, 10, 11, 11, 11 } };
+            yield return new double[] { 0 };
+            yield return new double[] { 1 };
+            yield return new double[] { 10 };
+            yield return new double[] { 1, 1, 1 };
+            yield return new double[] { 10, 10, 10 };
+            yield return Enumerable.Repeat(2.0, 10_000).ToArray();
+            yield return new double[] { 10, 10, 11, 11, 11 };
 
             // Negative
-            yield return new object[] { new double[] { -1 } };
-            yield return new object[] { new double[] { -1, -1, -1 } };
-            yield return new object[] { new double[] { -10, -10, -10 } };
-            yield return new object[] { Enumerable.Repeat(-2.0, 10_000).ToArray() };
-            yield return new object[] { new double[] { -10, -10, -11, -11, -11 } };
+            yield return new double[] { -1 };
+            yield return new double[] { -1, -1, -1 };
+            yield return new double[] { -10, -10, -10 };
+            yield return Enumerable.Repeat(-2.0, 10_000).ToArray();
+            yield return new double[] { -10, -10, -11, -11, -11 };
 
             // Mixed negative and positive
-            yield return new object[] { new double[] { -1, 1 } };
-            yield return new object[] { new double[] { -1, -1, -1, 1, 1, 1 } };
-            yield return new object[] { new double[] { -10, -10, -10, 10, 10, 10 } };
-            yield return new object[] { Enumerable.Range(0, 20_000).Select(i => i % 2 == 0 ? 2.0 : -2.0).ToArray() };
-            yield return new object[] { new double[] { -10, -10, -11, -11, -11, 10, 10, 11, 11, 11 } };
+            yield return new double[] { -1, 1 };
+            yield return new double[] { -1, -1, -1, 1, 1, 1 };
+            yield return new double[] { -10, -10, -10, 10, 10, 10 };
+            yield return Enumerable.Range(0, 20_000).Select(i => i % 2 == 0 ? 2.0 : -2.0).ToArray();
+            yield return new double[] { -10, -10, -11, -11, -11, 10, 10, 11, 11, 11 };
 
             // With zeroes
-            yield return new object[] { Enumerable.Repeat(0.0, 100).ToArray() };
-            yield return new object[] { Enumerable.Repeat(0.0, 10).Concat(DoubleRange(0, 100)).ToArray() };
-            yield return new object[] { DoubleRange(0, 100).Concat(Enumerable.Repeat(0.0, 10)).ToArray() };
-            yield return new object[] { Enumerable.Repeat(0.0, 10).Concat(DoubleRange(-100, 200)).ToArray() };
-            yield return new object[] { DoubleRange(-100, 200).Concat(Enumerable.Repeat(0.0, 10)).ToArray() };
+            yield return Enumerable.Repeat(0.0, 100).ToArray();
+            yield return Enumerable.Repeat(0.0, 10).Concat(DoubleRange(0, 100)).ToArray();
+            yield return DoubleRange(0, 100).Concat(Enumerable.Repeat(0.0, 10)).ToArray();
+            yield return Enumerable.Repeat(0.0, 10).Concat(DoubleRange(-100, 200)).ToArray();
+            yield return DoubleRange(-100, 200).Concat(Enumerable.Repeat(0.0, 10)).ToArray();
 
             // Without zeroes
-            yield return new object[] { DoubleRange(1, 99).ToArray() };
-            yield return new object[] { DoubleRange(-100, 99).Concat(DoubleRange(1, 99)).ToArray() };
+            yield return DoubleRange(1, 99).ToArray();
+            yield return DoubleRange(-100, 99).Concat(DoubleRange(1, 99)).ToArray();
 
             // Increasing linearly
-            yield return new object[] { DoubleRange(0, 10_000).ToArray() };
+            yield return DoubleRange(0, 10_000).ToArray();
 
             // Decreasing linearly
-            yield return new object[] { DoubleRange(0, 10_000).Select(v => 10_000 - v).ToArray() };
+            yield return DoubleRange(0, 10_000).Select(v => 10_000 - v).ToArray();
 
             // Negative numbers increasing linearly
-            yield return new object[] { DoubleRange(-10_000, 10_000).ToArray() };
+            yield return DoubleRange(-10_000, 10_000).ToArray();
 
             // Negative and positive numbers increasing linearly
-            yield return new object[] { DoubleRange(-10_000, 20_000).ToArray() };
+            yield return DoubleRange(-10_000, 20_000).ToArray();
 
             // Negative numbers decreasing linearly
-            yield return new object[] { DoubleRange(0, 10_000).Select(v => -v).ToArray() };
+            yield return DoubleRange(0, 10_000).Select(v => -v).ToArray();
 
             // Negative and positive numbers decreasing linearly
-            yield return new object[] { DoubleRange(0, 20_000).Select(v => 10_000 - v).ToArray() };
+            yield return DoubleRange(0, 20_000).Select(v => 10_000 - v).ToArray();
 
             // Increasing exponentially
-            yield return new object[] { DoubleRange(0, 100).Select(Math.Exp).ToArray() };
+            yield return DoubleRange(0, 100).Select(Math.Exp).ToArray();
 
             // Decreasing exponentially
-            yield return new object[] { DoubleRange(0, 100).Select(v => Math.Exp(-v)).ToArray() };
+            yield return DoubleRange(0, 100).Select(v => Math.Exp(-v)).ToArray();
 
             // Negative numbers increasing exponentially
-            yield return new object[] { DoubleRange(0, 100).Select(v => -Math.Exp(v)).ToArray() };
+            yield return DoubleRange(0, 100).Select(v => -Math.Exp(v)).ToArray();
 
             // Negative and positive numbers increasing exponentially
-            yield return new object[]
-            {
-                DoubleRange(0, 100).Select(v => -Math.Exp(v))
-                    .Concat(DoubleRange(0, 100).Select(Math.Exp))
-                    .ToArray()
-            };
+            yield return DoubleRange(0, 100).Select(v => -Math.Exp(v))
+                .Concat(DoubleRange(0, 100).Select(Math.Exp))
+                .ToArray();
 
             // Negative numbers decreasing exponentially
-            yield return new object[] { DoubleRange(0, 100).Select(v => -Math.Exp(-v)).ToArray() };
+            yield return DoubleRange(0, 100).Select(v => -Math.Exp(-v)).ToArray();
 
             // Negative and positive numbers decreading exponentially
-            yield return new object[]
-            {
-                DoubleRange(0, 100).Select(v => -Math.Exp(-v))
-                    .Concat(DoubleRange(0, 100).Select(v => Math.Exp(-v)))
-                    .ToArray()
-            };
+            yield return DoubleRange(0, 100).Select(v => -Math.Exp(-v))
+                .Concat(DoubleRange(0, 100).Select(v => Math.Exp(-v)))
+                .ToArray();
         }
 
-        [Fact]
+        [Test]
         public void ThrowsExceptionsWhenExpected()
         {
             var sketch = NewSketch();
@@ -110,7 +104,7 @@ namespace Datadog.Sketches.Tests
             NonEmptySketchAssertions(sketch);
         }
 
-        [Fact]
+        [Test]
         public void ClearSketchShouldBehaveEmpty()
         {
             var sketch = NewSketch();
@@ -120,31 +114,31 @@ namespace Datadog.Sketches.Tests
             EmptySketchAssertions(sketch);
         }
 
-        [Fact]
+        [Test]
         public void TestEmpty()
         {
             TestAdding();
         }
 
-        [Theory]
-        [MemberData(nameof(GetConstantTestCases))]
+        [Test]
+        [TestCaseSource(nameof(GetConstantTestCases))]
         public void TestConstants(double[] values)
         {
             TestAdding(values);
         }
 
-        [Fact]
+        [Test]
         public void TestMergingConstants()
         {
             TestMerging(new[] { 1.0, 1.0 }, new[] { 1.0, 1.0, 1.0 });
         }
 
-        [Theory]
-        [InlineData(new[] { 0.0 }, new[] { 10_000.0 }, null)]
-        [InlineData(new[] { 10_000.0 }, new[] { 20_000.0 }, null)]
-        [InlineData(new[] { 20_000.0 }, new[] { 10_000.0 }, null)]
-        [InlineData(new[] { 10_000.0 }, new[] { 0.0 }, new[] { 0.0 })]
-        [InlineData(new[] { 10_000.0, 0.0 }, new[] { 10_000.0 }, new[] { 0.0 })]
+        [Test]
+        [TestCase(new[] { 0.0 }, new[] { 10_000.0 }, null)]
+        [TestCase(new[] { 10_000.0 }, new[] { 20_000.0 }, null)]
+        [TestCase(new[] { 20_000.0 }, new[] { 10_000.0 }, null)]
+        [TestCase(new[] { 10_000.0 }, new[] { 0.0 }, new[] { 0.0 })]
+        [TestCase(new[] { 10_000.0, 0.0 }, new[] { 10_000.0 }, new[] { 0.0 })]
         public void TestMergingFarApart(double[] values1, double[] values2, double[] values3)
         {
             TestMerging(values1, values2, values3 ?? Array.Empty<double>());
@@ -278,15 +272,6 @@ namespace Datadog.Sketches.Tests
             if (SameSign(sortedValues))
             {
                 AssertAccurate(sortedValues.Sum(), actualSumValue);
-            }
-        }
-
-        private void AssertAverageAccurate(double[] sortedValues, double actualAverageValue)
-        {
-            // The average is accurate if the values that have been added to the sketch have same sign.
-            if (SameSign(sortedValues))
-            {
-                AssertAccurate(sortedValues.Average(), actualAverageValue);
             }
         }
 

@@ -71,7 +71,8 @@ namespace Datadog.Sketches.Stores
         /// <inheritdoc />
         protected override void Adjust(int newMinIndex, int newMaxIndex)
         {
-            if (newMaxIndex - newMinIndex + 1 > Counts.Length)
+            // The cast to long is required to deal with overflows
+            if ((long)newMaxIndex - newMinIndex + 1 > Counts.Length)
             {
                 // The range of indices is too wide, buckets of lowest indices need to be collapsed
                 newMinIndex = newMaxIndex - Counts.Length + 1;

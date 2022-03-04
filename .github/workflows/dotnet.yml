@@ -1,0 +1,32 @@
+name: .NET
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v1
+      name: Checkout Code      
+
+    - name: Setup .NET Core SDK 3.1
+      uses: actions/setup-dotnet@v1.7.2
+      with:
+        dotnet-version: 3.1
+        
+    - name: Setup .NET Core SDK 2.1
+      uses: actions/setup-dotnet@v1.7.2
+      with:
+        dotnet-version: 2.1
+     
+    - name: Install dependencies
+      run: dotnet restore Datadog.Sketches.sln
+
+    - name: Build
+      run: dotnet build Datadog.Sketches.sln --configuration Release --no-restore
+
+    - name: Test
+      run: dotnet test Datadog.Sketches.sln --no-restore --verbosity normal
+ 

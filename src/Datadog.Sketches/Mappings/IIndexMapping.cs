@@ -5,20 +5,19 @@
 
 #pragma warning disable SA1600 // Elements should be documented
 
-namespace Datadog.Sketches.Mappings
+namespace Datadog.Sketches.Mappings;
+
+public interface IIndexMapping
 {
-    public interface IIndexMapping
-    {
-        double RelativeAccuracy { get; }
+    double RelativeAccuracy { get; }
 
-        double MinIndexableValue { get; }
+    double MinIndexableValue { get; }
 
-        double MaxIndexableValue { get; }
+    double MaxIndexableValue { get; }
 
-        int GetIndex(double value);
+    int GetIndex(double value);
 
-        double GetValue(int index);
+    double GetValue(int index);
 
-        double GetLowerBound(int index);
-    }
+    double GetLowerBound(int index);
 }

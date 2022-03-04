@@ -9,36 +9,35 @@ using System.Linq;
 using Datadog.Sketches.Stores;
 using NUnit.Framework;
 
-namespace Datadog.Sketches.Tests.Stores
+namespace Datadog.Sketches.Tests.Stores;
+
+[TestFixture(1)]
+[TestFixture(20)]
+[TestFixture(1000)]
+public class CollapsingLowestDenseStoreTests : StoreTests
 {
-    [TestFixture(1)]
-    [TestFixture(20)]
-    [TestFixture(1000)]
-    public class CollapsingLowestDenseStoreTests : StoreTests
+    private readonly int _maxBins;
+
+    public CollapsingLowestDenseStoreTests(int maxBins)
     {
-        private readonly int _maxBins;
+        _maxBins = maxBins;
+    }
 
-        public CollapsingLowestDenseStoreTests(int maxBins)
+    protected override Store NewStore() => new CollapsingLowestDenseStore(_maxBins);
+
+    protected override IDictionary<int, double> GetCounts(Bin[] bins)
+    {
+        var nonEmptyBins = bins.Where(b => b.Count > 0).ToArray();
+
+        if (nonEmptyBins.Length == 0)
         {
-            _maxBins = maxBins;
+            return new Dictionary<int, double>();
         }
 
-        protected override Store NewStore() => new CollapsingLowestDenseStore(_maxBins);
+        var maxIndex = nonEmptyBins.Max(b => b.Index);
+        var minStorableIndex = (int)Math.Max(int.MinValue, (long)maxIndex - _maxBins + 1);
 
-        protected override IDictionary<int, double> GetCounts(Bin[] bins)
-        {
-            var nonEmptyBins = bins.Where(b => b.Count > 0).ToArray();
-
-            if (nonEmptyBins.Length == 0)
-            {
-                return new Dictionary<int, double>();
-            }
-
-            var maxIndex = nonEmptyBins.Max(b => b.Index);
-            var minStorableIndex = (int)Math.Max(int.MinValue, (long)maxIndex - _maxBins + 1);
-
-            return bins.GroupBy(b => Math.Max(b.Index, minStorableIndex))
-                .ToDictionary(g => g.Key, g => g.Sum(b => b.Count));
-        }
+        return bins.GroupBy(b => Math.Max(b.Index, minStorableIndex))
+            .ToDictionary(g => g.Key, g => g.Sum(b => b.Count));
     }
 }

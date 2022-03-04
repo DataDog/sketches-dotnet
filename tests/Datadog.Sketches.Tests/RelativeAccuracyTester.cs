@@ -6,42 +6,41 @@
 using System;
 using FluentAssertions;
 
-namespace Datadog.Sketches.Tests
+namespace Datadog.Sketches.Tests;
+
+internal class RelativeAccuracyTester
 {
-    internal class RelativeAccuracyTester
+    internal const double FloatingPointAcceptableError = 1e-10;
+
+    public static void AssertAccurate(double maxExpected, double actual)
     {
-        internal const double FloatingPointAcceptableError = 1e-10;
+        actual.Should().BeLessThanOrEqualTo(maxExpected + FloatingPointAcceptableError);
+    }
 
-        public static void AssertAccurate(double maxExpected, double actual)
+    public static double Compute(double expected, double actual) => Compute(expected, expected, actual);
+
+    public static double Compute(double expectedMin, double expectedMax, double actual)
+    {
+        if (expectedMin < 0 || expectedMax < 0 || actual < 0)
         {
-            actual.Should().BeLessThanOrEqualTo(maxExpected + FloatingPointAcceptableError);
+            throw new ArgumentOutOfRangeException();
         }
 
-        public static double Compute(double expected, double actual) => Compute(expected, expected, actual);
-
-        public static double Compute(double expectedMin, double expectedMax, double actual)
+        if ((expectedMin <= actual) && (actual <= expectedMax))
         {
-            if (expectedMin < 0 || expectedMax < 0 || actual < 0)
-            {
-                throw new ArgumentOutOfRangeException();
-            }
-
-            if ((expectedMin <= actual) && (actual <= expectedMax))
-            {
-                return 0;
-            }
-
-            if (expectedMin == 0 && expectedMax == 0)
-            {
-                return actual == 0 ? 0 : double.PositiveInfinity;
-            }
-
-            if (actual < expectedMin)
-            {
-                return (expectedMin - actual) / expectedMin;
-            }
-
-            return (actual - expectedMax) / expectedMax;
+            return 0;
         }
+
+        if (expectedMin == 0 && expectedMax == 0)
+        {
+            return actual == 0 ? 0 : double.PositiveInfinity;
+        }
+
+        if (actual < expectedMin)
+        {
+            return (expectedMin - actual) / expectedMin;
+        }
+
+        return (actual - expectedMax) / expectedMax;
     }
 }

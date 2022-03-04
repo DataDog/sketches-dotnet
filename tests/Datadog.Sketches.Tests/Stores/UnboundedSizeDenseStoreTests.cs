@@ -7,28 +7,27 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Sketches.Stores;
 
-namespace Datadog.Sketches.Tests.Stores
+namespace Datadog.Sketches.Tests.Stores;
+
+public class UnboundedSizeDenseStoreTests : StoreTests
 {
-    public class UnboundedSizeDenseStoreTests : StoreTests
+    public override void TestExtremeValues()
     {
-        public override void TestExtremeValues()
-        {
-            // UnboundedSizeDenseStore is not meant to be used with values that are extremely far from one
-            // another as it would allocate an excessively large array.
-        }
+        // UnboundedSizeDenseStore is not meant to be used with values that are extremely far from one
+        // another as it would allocate an excessively large array.
+    }
 
-        public override void TestMergingExtremeValues()
-        {
-            // UnboundedSizeDenseStore is not meant to be used with values that are extremely far from one
-            // another as it would allocate an excessively large array.
-        }
+    public override void TestMergingExtremeValues()
+    {
+        // UnboundedSizeDenseStore is not meant to be used with values that are extremely far from one
+        // another as it would allocate an excessively large array.
+    }
 
-        protected override Store NewStore() => new UnboundedSizeDenseStore();
+    protected override Store NewStore() => new UnboundedSizeDenseStore();
 
-        protected override IDictionary<int, double> GetCounts(Bin[] bins)
-        {
-            return bins.GroupBy(b => b.Index)
-                .ToDictionary(g => g.Key, g => g.Sum(b => b.Count));
-        }
+    protected override IDictionary<int, double> GetCounts(Bin[] bins)
+    {
+        return bins.GroupBy(b => b.Index)
+            .ToDictionary(g => g.Key, g => g.Sum(b => b.Count));
     }
 }

@@ -9,7 +9,7 @@
       "copyrightText": "Unless explicitly stated otherwise all files in this repository are licensed under the {licenseName} License.\nThis product includes software developed at Datadog (https://www.datadoghq.com/). Copyright {year} Datadog, Inc.",
       "variables": {
         "licenseName": "Apache 2",
-        "year": "2017"
+        "year": "2022"
       },
       "documentExposedElements": true,
 

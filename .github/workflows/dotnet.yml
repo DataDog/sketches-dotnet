@@ -23,9 +23,15 @@ jobs:
 
     - name: Add msbuild to PATH
       uses: microsoft/setup-msbuild@v1.1
+      
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v1.0.2
+
+    - name: Restore NuGet Packages
+      run: nuget restore Datadog.Sketches.sln
 
     - name: Build app for release
-      run: msbuild Datadog.Sketches.sln -t:rebuild -verbosity:diag -property:Configuration=Release
+      run: msbuild Datadog.Sketches.sln -t:rebuild -property:Configuration=Release
 
     - name: Install dependencies
       run: dotnet restore Datadog.Sketches.sln

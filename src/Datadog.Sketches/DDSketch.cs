@@ -62,11 +62,11 @@ namespace Datadog.Sketches
         /// <param name="positiveValueStore">Storage for positive values</param>
         /// <param name="minIndexedValue">The minimum value seen by the sketch</param>
         public DDSketch(IIndexMapping indexMapping, Store negativeValueStore, Store positiveValueStore, double minIndexedValue)
-            : this(indexMapping, negativeValueStore, positiveValueStore, 0, minIndexedValue)
+            : this(indexMapping, negativeValueStore, positiveValueStore, minIndexedValue, 0)
         {
         }
 
-        private DDSketch(IIndexMapping indexMapping, Store negativeValueStore, Store positiveValueStore, double zeroCount, double minIndexedValue)
+        private DDSketch(IIndexMapping indexMapping, Store negativeValueStore, Store positiveValueStore, double minIndexedValue, double zeroCount)
         {
             _indexMapping = indexMapping;
             _negativeValueStore = negativeValueStore;

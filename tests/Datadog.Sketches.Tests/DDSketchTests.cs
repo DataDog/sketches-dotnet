@@ -158,7 +158,7 @@ public class DDSketchTests
         sketch.Invoking(s => s.GetMaxValue()).Should().Throw<InvalidOperationException>();
         sketch.Invoking(s => s.GetValueAtQuantile(0.5)).Should().Throw<InvalidOperationException>();
         sketch.Invoking(s => s.GetValuesAtQuantiles(new[] { 0.5 })).Should().Throw<InvalidOperationException>();
-        sketch.Invoking(s => s.MergeWith(null)).Should().Throw<ArgumentNullException>();
+        sketch.Invoking(s => s.MergeWith(null!)).Should().Throw<ArgumentNullException>();
         sketch.Invoking(s => s.Add(0, -1)).Should().Throw<ArgumentOutOfRangeException>();
         sketch.Invoking(s => s.Add(1, -1)).Should().Throw<ArgumentOutOfRangeException>();
     }

@@ -42,7 +42,7 @@ public readonly struct Bin : IEquatable<Bin>
     }
 
     /// <inheritdoc />
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         return obj is Bin other && Equals(other);
     }

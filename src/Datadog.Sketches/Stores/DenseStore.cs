@@ -49,7 +49,7 @@ public abstract class DenseStore : Store
 
         _arrayLengthGrowthIncrement = arrayLengthGrowthIncrement;
         _arrayLengthOverhead = arrayLengthOverhead;
-        Counts = null;
+        Counts = Array.Empty<double>();
         Offset = 0;
         MinIndex = int.MaxValue;
         MaxIndex = int.MinValue;
@@ -66,7 +66,7 @@ public abstract class DenseStore : Store
         MinIndex = store.MinIndex;
         MaxIndex = store.MaxIndex;
 
-        if (store.Counts != null && !store.IsEmpty())
+        if (store.Counts.Length > 0 && !store.IsEmpty())
         {
             Counts = new double[store.MaxIndex - store.MinIndex + 1];
             Array.Copy(store.Counts, store.MinIndex - store.Offset, Counts, 0, Counts.Length);
@@ -74,6 +74,7 @@ public abstract class DenseStore : Store
         }
         else
         {
+            Counts = Array.Empty<double>();
             // Should be zero anyway, but just in case
             Offset = store.Offset;
         }

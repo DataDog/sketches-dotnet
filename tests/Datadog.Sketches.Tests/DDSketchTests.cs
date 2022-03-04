@@ -15,8 +15,6 @@ namespace Datadog.Sketches.Tests
 {
     public class DDSketchTests
     {
-        internal const double FloatingPointAcceptableError = 1e-10;
-
         public static IEnumerable<double[]> GetConstantTestCases()
         {
             // Positive
@@ -292,8 +290,8 @@ namespace Datadog.Sketches.Tests
                     : maxExpected * (1 - relativeAccuracy);
 
             actual.Should()
-                .BeGreaterThanOrEqualTo(relaxedMinExpected - FloatingPointAcceptableError)
-                .And.BeLessThanOrEqualTo(relaxedMaxExpected + FloatingPointAcceptableError);
+                .BeGreaterThanOrEqualTo(relaxedMinExpected - RelativeAccuracyTester.FloatingPointAcceptableError)
+                .And.BeLessThanOrEqualTo(relaxedMaxExpected + RelativeAccuracyTester.FloatingPointAcceptableError);
         }
 
         private double RelativeAccuracy() => 1e-1;

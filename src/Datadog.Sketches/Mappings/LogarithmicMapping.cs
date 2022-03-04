@@ -22,7 +22,7 @@ namespace Datadog.Sketches.Mappings
         private readonly double _multiplier;
 
         public LogarithmicMapping(double relativeAccuracy)
-            : this((1 + relativeAccuracy) / (1 - relativeAccuracy), 0)
+            : this(Gamma(RequireValidRelativeAccuracy(relativeAccuracy), 1), 0)
         {
         }
 
@@ -35,17 +35,17 @@ namespace Datadog.Sketches.Mappings
 
             _indexOffset = indexOffset;
             _multiplier = 1 / Math.Log(gamma);
-            RelativeAccuracy = 1 - (2 / (1 + gamma));
+            RelativeAccuracy = (gamma - 1) / (gamma + 1);
 
             unchecked
             {
                 MinIndexableValue = Math.Max(
                     Math.Exp(((int.MinValue - indexOffset) / _multiplier) + 1),
-                    MinNormal * gamma);
+                    MinNormal * (1 + RelativeAccuracy) / (1 - RelativeAccuracy));
 
                 MaxIndexableValue = Math.Min(
                     Math.Exp(((int.MaxValue - indexOffset) / _multiplier) - 1),
-                    Math.Exp(double.MaxValue / (2 * gamma) * (gamma + 1)));
+                    double.MaxValue / (1 + RelativeAccuracy));
             }
         }
 
@@ -107,6 +107,29 @@ namespace Datadog.Sketches.Mappings
             {
                 return (_indexOffset.GetHashCode() * 397) ^ _multiplier.GetHashCode();
             }
+        }
+
+        /// <summary>
+        /// Calculates the (minimal) base that needs to be used for the mapping to be relatively accurate
+        /// with the provided relative accuracy.
+        /// </summary>
+        /// <param name="relativeAccuracy">The relative accuracy that we want the index mapping to guarantee</param>
+        /// <param name="correctingFactor">A measure of how well the mapping approximates the logarithm</param>
+        /// <returns>The base of the logarithm to use to guarantee the provided relative accuracy</returns>
+        private static double Gamma(double relativeAccuracy, double correctingFactor)
+        {
+            var exactLogGamma = (1 + relativeAccuracy) / (1 - relativeAccuracy);
+            return Math.Pow(exactLogGamma, 1 / correctingFactor);
+        }
+
+        private static double RequireValidRelativeAccuracy(double relativeAccuracy)
+        {
+            if (relativeAccuracy <= 0 || relativeAccuracy >= 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(relativeAccuracy), "The relative accuracy must be between 0 and 1.");
+            }
+
+            return relativeAccuracy;
         }
     }
 }

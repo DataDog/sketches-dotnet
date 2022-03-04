@@ -188,7 +188,7 @@ namespace Datadog.Sketches.Tests.Stores
 
             var copy = store.Copy();
 
-            copy.GetTotalCount().Should().BeApproximately(store.GetTotalCount(), DDSketchTests.FloatingPointAcceptableError);
+            copy.GetTotalCount().Should().BeApproximately(store.GetTotalCount(), RelativeAccuracyTester.FloatingPointAcceptableError);
         }
 
         protected abstract Store NewStore();
@@ -205,7 +205,7 @@ namespace Datadog.Sketches.Tests.Stores
         private static void AssertEncodes(IDictionary<int, double> expectedCounts, Store store)
         {
             var expectedTotalCount = expectedCounts.Values.Sum();
-            store.GetTotalCount().Should().BeApproximately(expectedTotalCount, DDSketchTests.FloatingPointAcceptableError);
+            store.GetTotalCount().Should().BeApproximately(expectedTotalCount, RelativeAccuracyTester.FloatingPointAcceptableError);
 
             if (expectedTotalCount == 0)
             {
@@ -241,7 +241,7 @@ namespace Datadog.Sketches.Tests.Stores
 
             foreach (var key in expected.Keys)
             {
-                actualDictionary[key].Should().BeApproximately(expected[key], DDSketchTests.FloatingPointAcceptableError);
+                actualDictionary[key].Should().BeApproximately(expected[key], RelativeAccuracyTester.FloatingPointAcceptableError);
             }
         }
 

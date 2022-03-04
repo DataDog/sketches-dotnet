@@ -99,12 +99,12 @@ namespace Datadog.Sketches.Tests.Stores
         [Test]
         public virtual void TestExtremeValues()
         {
-            // TestAdding(int.MinValue);
-            // TestAdding(int.MaxValue);
+            TestAdding(int.MinValue);
+            TestAdding(int.MaxValue);
             TestAdding(0, int.MinValue);
-            // TestAdding(0, int.MaxValue);
-            // TestAdding(int.MinValue, int.MaxValue);
-            // TestAdding(int.MaxValue, int.MinValue);
+            TestAdding(0, int.MaxValue);
+            TestAdding(int.MinValue, int.MaxValue);
+            TestAdding(int.MaxValue, int.MinValue);
         }
 
         [Test]

@@ -3,12 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
-namespace Datadog.Sketches
+namespace Datadog.Sketches;
+
+internal static class Helpers
 {
-    internal static class Helpers
+    public static void ArrayFill<T>(T[] array, int fromIndex, int toIndex, T value)
     {
-        public static void ArrayFill<T>(T[] array, int fromIndex, int toIndex, T value)
-        {
 #if NETCOREAPP2_0_OR_GREATER
             System.Array.Fill(array, value, fromIndex, toIndex - fromIndex);
 #else
@@ -17,6 +17,5 @@ namespace Datadog.Sketches
                 array[i] = value;
             }
 #endif
-        }
     }
 }

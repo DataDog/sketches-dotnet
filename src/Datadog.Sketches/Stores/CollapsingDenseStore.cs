@@ -7,38 +7,37 @@
 
 using System;
 
-namespace Datadog.Sketches.Stores
+namespace Datadog.Sketches.Stores;
+
+public abstract class CollapsingDenseStore : DenseStore
 {
-    public abstract class CollapsingDenseStore : DenseStore
+    private readonly int _maxNumBins;
+
+    protected CollapsingDenseStore(int maxNumBins)
     {
-        private readonly int _maxNumBins;
+        _maxNumBins = maxNumBins;
+        IsCollapsed = false;
+    }
 
-        protected CollapsingDenseStore(int maxNumBins)
-        {
-            _maxNumBins = maxNumBins;
-            IsCollapsed = false;
-        }
+    protected CollapsingDenseStore(CollapsingDenseStore store)
+        : base(store)
+    {
+        _maxNumBins = store._maxNumBins;
+        IsCollapsed = store.IsCollapsed;
+    }
 
-        protected CollapsingDenseStore(CollapsingDenseStore store)
-            : base(store)
-        {
-            _maxNumBins = store._maxNumBins;
-            IsCollapsed = store.IsCollapsed;
-        }
+    protected bool IsCollapsed { get; set; }
 
-        protected bool IsCollapsed { get; set; }
+    /// <inheritdoc />
+    public override void Clear()
+    {
+        base.Clear();
+        IsCollapsed = false;
+    }
 
-        /// <inheritdoc />
-        public override void Clear()
-        {
-            base.Clear();
-            IsCollapsed = false;
-        }
-
-        /// <inheritdoc />
-        protected override long GetNewLength(int newMinIndex, int newMaxIndex)
-        {
-            return Math.Min(base.GetNewLength(newMinIndex, newMaxIndex), _maxNumBins);
-        }
+    /// <inheritdoc />
+    protected override long GetNewLength(int newMinIndex, int newMaxIndex)
+    {
+        return Math.Min(base.GetNewLength(newMinIndex, newMaxIndex), _maxNumBins);
     }
 }

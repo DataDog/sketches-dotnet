@@ -33,5 +33,5 @@ jobs:
       run: dotnet build Datadog.Sketches.sln --configuration Release --no-restore
 
     - name: Test
-      run: dotnet test Datadog.Sketches.sln --no-restore --no-build --verbosity normal
+      run: dotnet test Datadog.Sketches.sln --configuration Release --no-restore --no-build --verbosity normal
  

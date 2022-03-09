@@ -6,13 +6,14 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Sketches.Serialization;
 
 namespace Datadog.Sketches.Stores;
 
 /// <summary>
 /// An object that maps integers to counters. It can be seen as a collection of Bin, which are pairs of indices and counters.
 /// </summary>
-public abstract class Store : IEnumerable<Bin>
+public abstract class Store : IEnumerable<Bin>, ISerializable
 {
     /// <summary>
     /// Increments the counter at the specified index.
@@ -125,4 +126,10 @@ public abstract class Store : IEnumerable<Bin>
     /// </summary>
     /// <returns>Enumerable</returns>
     public virtual IEnumerable<Bin> EnumerateDescending() => this.Reverse();
+
+    /// <inheritdoc />
+    public abstract int ComputeSerializedSize();
+
+    /// <inheritdoc />
+    public abstract void Serialize(Serializer serializer);
 }

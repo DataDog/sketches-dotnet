@@ -5,8 +5,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Datadog.Sketches.Mappings;
+using Datadog.Sketches.Serialization;
 using Datadog.Sketches.Stores;
 
 namespace Datadog.Sketches;
@@ -36,12 +38,8 @@ namespace Datadog.Sketches;
 /// </summary>
 public class DDSketch
 {
-    private readonly IIndexMapping _indexMapping;
-    private readonly Store _negativeValueStore;
-    private readonly Store _positiveValueStore;
     private readonly double _minIndexedValue;
     private readonly double _maxIndexedValue;
-    private double _zeroCount;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DDSketch"/> class.
@@ -66,15 +64,35 @@ public class DDSketch
     {
     }
 
-    private DDSketch(IIndexMapping indexMapping, Store negativeValueStore, Store positiveValueStore, double minIndexedValue, double zeroCount)
+    internal DDSketch(IIndexMapping indexMapping, Store negativeValueStore, Store positiveValueStore, double minIndexedValue, double zeroCount)
     {
-        _indexMapping = indexMapping;
-        _negativeValueStore = negativeValueStore;
-        _positiveValueStore = positiveValueStore;
+        IndexMapping = indexMapping;
+        NegativeValueStore = negativeValueStore;
+        PositiveValueStore = positiveValueStore;
         _minIndexedValue = Math.Max(minIndexedValue, indexMapping.MinIndexableValue);
         _maxIndexedValue = indexMapping.MaxIndexableValue;
-        _zeroCount = zeroCount;
+        ZeroCount = zeroCount;
     }
+
+    /// <summary>
+    /// Gets the map between values and store bins.
+    /// </summary>
+    public IIndexMapping IndexMapping { get; }
+
+    /// <summary>
+    /// Gets the number of zeros stored in the sketch.
+    /// </summary>
+    public double ZeroCount { get; private set; }
+
+    /// <summary>
+    /// Gets the positive values stored in the sketch.
+    /// </summary>
+    public Store PositiveValueStore { get; }
+
+    /// <summary>
+    /// Gets the negative values stored in the sketch.
+    /// </summary>
+    public Store NegativeValueStore { get; }
 
     /// <summary>
     /// Adds a value to the sketch.
@@ -105,7 +123,7 @@ public class DDSketch
                 throw new ArgumentOutOfRangeException(nameof(value), "The input value is outside the range that is tracked by the sketch (too high)");
             }
 
-            _positiveValueStore.Add(_indexMapping.GetIndex(value), count);
+            PositiveValueStore.Add(IndexMapping.GetIndex(value), count);
         }
         else if (value < -_minIndexedValue)
         {
@@ -114,7 +132,7 @@ public class DDSketch
                 throw new ArgumentOutOfRangeException(nameof(value), "The input value is outside the range that is tracked by the sketch (too low)");
             }
 
-            _negativeValueStore.Add(_indexMapping.GetIndex(-value), count);
+            NegativeValueStore.Add(IndexMapping.GetIndex(-value), count);
         }
         else if (double.IsNaN(value))
         {
@@ -122,7 +140,7 @@ public class DDSketch
         }
         else
         {
-            _zeroCount += count;
+            ZeroCount += count;
         }
     }
 
@@ -132,9 +150,9 @@ public class DDSketch
     /// </summary>
     public void Clear()
     {
-        _positiveValueStore.Clear();
-        _negativeValueStore.Clear();
-        _zeroCount = 0;
+        PositiveValueStore.Clear();
+        NegativeValueStore.Clear();
+        ZeroCount = 0;
     }
 
     /// <summary>
@@ -143,7 +161,7 @@ public class DDSketch
     /// <returns>The total number of values</returns>
     public double GetCount()
     {
-        return _zeroCount + _positiveValueStore.GetTotalCount() + _negativeValueStore.GetTotalCount();
+        return ZeroCount + PositiveValueStore.GetTotalCount() + NegativeValueStore.GetTotalCount();
     }
 
     /// <summary>
@@ -182,14 +200,14 @@ public class DDSketch
             throw new ArgumentNullException(nameof(other));
         }
 
-        if (!_indexMapping.Equals(other._indexMapping))
+        if (!IndexMapping.Equals(other.IndexMapping))
         {
             throw new InvalidOperationException("The sketches are not mergeable because they do not use the same index mappings.");
         }
 
-        _negativeValueStore.MergeWith(other._negativeValueStore);
-        _positiveValueStore.MergeWith(other._positiveValueStore);
-        _zeroCount += other._zeroCount;
+        NegativeValueStore.MergeWith(other.NegativeValueStore);
+        PositiveValueStore.MergeWith(other.PositiveValueStore);
+        ZeroCount += other.ZeroCount;
     }
 
     /// <summary>
@@ -198,7 +216,7 @@ public class DDSketch
     /// <returns>True if no value has been added to this sketch, false otherwise</returns>
     public bool IsEmpty()
     {
-        return _zeroCount == 0 && _positiveValueStore.IsEmpty() && _negativeValueStore.IsEmpty();
+        return ZeroCount == 0 && PositiveValueStore.IsEmpty() && NegativeValueStore.IsEmpty();
     }
 
     /// <summary>
@@ -207,17 +225,17 @@ public class DDSketch
     /// <returns>Maximum value</returns>
     public double GetMaxValue()
     {
-        if (!_positiveValueStore.IsEmpty())
+        if (!PositiveValueStore.IsEmpty())
         {
-            return _indexMapping.GetValue(_positiveValueStore.GetMaxIndex());
+            return IndexMapping.GetValue(PositiveValueStore.GetMaxIndex());
         }
 
-        if (_zeroCount > 0)
+        if (ZeroCount > 0)
         {
             return 0;
         }
 
-        return -_indexMapping.GetValue(_negativeValueStore.GetMinIndex());
+        return -IndexMapping.GetValue(NegativeValueStore.GetMinIndex());
     }
 
     /// <summary>
@@ -226,17 +244,17 @@ public class DDSketch
     /// <returns>Minimum value</returns>
     public double GetMinValue()
     {
-        if (!_negativeValueStore.IsEmpty())
+        if (!NegativeValueStore.IsEmpty())
         {
-            return -_indexMapping.GetValue(_negativeValueStore.GetMaxIndex());
+            return -IndexMapping.GetValue(NegativeValueStore.GetMaxIndex());
         }
 
-        if (_zeroCount > 0)
+        if (ZeroCount > 0)
         {
             return 0;
         }
 
-        return _indexMapping.GetValue(_positiveValueStore.GetMinIndex());
+        return IndexMapping.GetValue(PositiveValueStore.GetMinIndex());
     }
 
     /// <summary>
@@ -249,17 +267,38 @@ public class DDSketch
     {
         double sum = 0;
 
-        foreach (var bin in _negativeValueStore)
+        foreach (var bin in NegativeValueStore)
         {
-            sum -= _indexMapping.GetValue(bin.Index) * bin.Count;
+            sum -= IndexMapping.GetValue(bin.Index) * bin.Count;
         }
 
-        foreach (var bin in _positiveValueStore)
+        foreach (var bin in PositiveValueStore)
         {
-            sum += _indexMapping.GetValue(bin.Index) * bin.Count;
+            sum += IndexMapping.GetValue(bin.Index) * bin.Count;
         }
 
         return sum;
+    }
+
+    /// <summary>
+    /// Produces protobuf encoded bytes which are equivalent to using the official protobuf bindings,
+    /// without requiring a runtime dependency on a protobuf library.
+    /// </summary>
+    /// <param name="output">The output stream for the serialized sketch</param>
+    public void Serialize(Stream output)
+    {
+        using var serializer = new Serializer(output);
+
+        serializer.WriteHeader(1, IndexMapping.ComputeSerializedSize());
+        IndexMapping.Serialize(serializer);
+
+        serializer.WriteHeader(2, PositiveValueStore.ComputeSerializedSize());
+        PositiveValueStore.Serialize(serializer);
+
+        serializer.WriteHeader(3, NegativeValueStore.ComputeSerializedSize());
+        NegativeValueStore.Serialize(serializer);
+
+        serializer.WriteDouble(4, ZeroCount);
     }
 
     private double GetValueAtQuantile(double quantile, double count)
@@ -278,24 +317,24 @@ public class DDSketch
 
         double n = 0;
 
-        foreach (var bin in _negativeValueStore.EnumerateDescending())
+        foreach (var bin in NegativeValueStore.EnumerateDescending())
         {
             if ((n += bin.Count) > rank)
             {
-                return -_indexMapping.GetValue(bin.Index);
+                return -IndexMapping.GetValue(bin.Index);
             }
         }
 
-        if ((n += _zeroCount) > rank)
+        if ((n += ZeroCount) > rank)
         {
             return 0;
         }
 
-        foreach (var bin in _positiveValueStore.EnumerateAscending())
+        foreach (var bin in PositiveValueStore.EnumerateAscending())
         {
             if ((n += bin.Count) > rank)
             {
-                return _indexMapping.GetValue(bin.Index);
+                return IndexMapping.GetValue(bin.Index);
             }
         }
 

@@ -3,11 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
+using Datadog.Sketches.Serialization;
+
 #pragma warning disable SA1600 // Elements should be documented
 
 namespace Datadog.Sketches.Mappings;
 
-public interface IIndexMapping
+public interface IIndexMapping : ISerializable
 {
     double RelativeAccuracy { get; }
 

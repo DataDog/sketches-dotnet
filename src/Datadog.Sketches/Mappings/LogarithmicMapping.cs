@@ -6,6 +6,7 @@
 #pragma warning disable SA1600 // Elements should be documented
 
 using System;
+using Datadog.Sketches.Serialization;
 
 namespace Datadog.Sketches.Mappings;
 
@@ -15,14 +16,13 @@ namespace Datadog.Sketches.Mappings;
 /// requires the least number of indices to cover a given range of values.
 /// This is done by logarithmically mapping floating-point values to integers.
 /// </summary>
-public class LogarithmicMapping : IIndexMapping
+public class LogarithmicMapping : IIndexMapping, ISerializable
 {
     private const double MinNormal = 2.2250738585072014E-308;
-    private readonly double _indexOffset;
     private readonly double _multiplier;
 
     public LogarithmicMapping(double relativeAccuracy)
-        : this(Gamma(RequireValidRelativeAccuracy(relativeAccuracy), 1), 0)
+        : this(ComputeGamma(RequireValidRelativeAccuracy(relativeAccuracy), 1), 0)
     {
     }
 
@@ -33,7 +33,8 @@ public class LogarithmicMapping : IIndexMapping
             throw new ArgumentOutOfRangeException(nameof(gamma), "Gamma must be greater than 1");
         }
 
-        _indexOffset = indexOffset;
+        Gamma = gamma;
+        IndexOffset = indexOffset;
         _multiplier = 1 / Math.Log(gamma);
         RelativeAccuracy = (gamma - 1) / (gamma + 1);
 
@@ -58,10 +59,14 @@ public class LogarithmicMapping : IIndexMapping
     /// <inheritdoc />
     public double MaxIndexableValue { get; }
 
+    internal double Gamma { get; }
+
+    internal double IndexOffset { get; }
+
     /// <inheritdoc />
     public int GetIndex(double value)
     {
-        var index = (Math.Log(value) * _multiplier) + _indexOffset;
+        var index = (Math.Log(value) * _multiplier) + IndexOffset;
         return index >= 0 ? (int)index : (int)index - 1;
     }
 
@@ -74,7 +79,7 @@ public class LogarithmicMapping : IIndexMapping
     /// <inheritdoc />
     public double GetLowerBound(int index)
     {
-        return Math.Exp((index - _indexOffset) / _multiplier);
+        return Math.Exp((index - IndexOffset) / _multiplier);
     }
 
     /// <inheritdoc />
@@ -97,7 +102,7 @@ public class LogarithmicMapping : IIndexMapping
 
         var other = (LogarithmicMapping)obj;
 
-        return _indexOffset.Equals(other._indexOffset) && _multiplier.Equals(other._multiplier);
+        return IndexOffset.Equals(other.IndexOffset) && _multiplier.Equals(other._multiplier);
     }
 
     /// <inheritdoc />
@@ -105,8 +110,22 @@ public class LogarithmicMapping : IIndexMapping
     {
         unchecked
         {
-            return (_indexOffset.GetHashCode() * 397) ^ _multiplier.GetHashCode();
+            return (IndexOffset.GetHashCode() * 397) ^ _multiplier.GetHashCode();
         }
+    }
+
+    /// <inheritdoc />
+    int ISerializable.ComputeSerializedSize()
+    {
+        return Serializer.DoubleFieldSize(1, Gamma) + Serializer.DoubleFieldSize(2, IndexOffset) + Serializer.FieldSize(3, 0);
+    }
+
+    /// <inheritdoc />
+    void ISerializable.Serialize(Serializer serializer)
+    {
+        serializer.WriteDouble(1, Gamma);
+        serializer.WriteDouble(2, IndexOffset);
+        serializer.WriteUnsignedInt32(3, 0); // Interpolation = None
     }
 
     /// <summary>
@@ -116,7 +135,7 @@ public class LogarithmicMapping : IIndexMapping
     /// <param name="relativeAccuracy">The relative accuracy that we want the index mapping to guarantee</param>
     /// <param name="correctingFactor">A measure of how well the mapping approximates the logarithm</param>
     /// <returns>The base of the logarithm to use to guarantee the provided relative accuracy</returns>
-    private static double Gamma(double relativeAccuracy, double correctingFactor)
+    private static double ComputeGamma(double relativeAccuracy, double correctingFactor)
     {
         var exactLogGamma = (1 + relativeAccuracy) / (1 - relativeAccuracy);
         return Math.Pow(exactLogGamma, 1 / correctingFactor);

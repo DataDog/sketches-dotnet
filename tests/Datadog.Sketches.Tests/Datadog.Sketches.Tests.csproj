@@ -7,6 +7,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="DDSketch.proto" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="DDSketch.proto" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Google.Protobuf" Version="3.19.4" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\Datadog.Sketches\Datadog.Sketches.csproj" />
   </ItemGroup>
 

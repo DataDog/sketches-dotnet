@@ -8,7 +8,7 @@ namespace Datadog.Sketches.Serialization
     /// <summary>
     /// Object serializable to protobuf using the dedicated serializer
     /// </summary>
-    public interface ISerializable
+    internal interface ISerializable
     {
         /// <summary>
         /// Gets the needed size for serialization

@@ -285,18 +285,24 @@ public class DDSketch
     /// without requiring a runtime dependency on a protobuf library.
     /// </summary>
     /// <param name="output">The output stream for the serialized sketch</param>
-    public void Serialize(Stream output)
+    internal void Serialize(Stream output)
     {
         using var serializer = new Serializer(output);
 
-        serializer.WriteHeader(1, IndexMapping.ComputeSerializedSize());
-        IndexMapping.Serialize(serializer);
+        var serializableIndexMapping = (ISerializable)IndexMapping;
 
-        serializer.WriteHeader(2, PositiveValueStore.ComputeSerializedSize());
-        PositiveValueStore.Serialize(serializer);
+        serializer.WriteHeader(1, serializableIndexMapping.ComputeSerializedSize());
+        serializableIndexMapping.Serialize(serializer);
 
-        serializer.WriteHeader(3, NegativeValueStore.ComputeSerializedSize());
-        NegativeValueStore.Serialize(serializer);
+        var serializablePositiveValueStore = (ISerializable)PositiveValueStore;
+
+        serializer.WriteHeader(2, serializablePositiveValueStore.ComputeSerializedSize());
+        serializablePositiveValueStore.Serialize(serializer);
+
+        var serializableNegativeValueStore = (ISerializable)NegativeValueStore;
+
+        serializer.WriteHeader(3, serializableNegativeValueStore.ComputeSerializedSize());
+        serializableNegativeValueStore.Serialize(serializer);
 
         serializer.WriteDouble(4, ZeroCount);
     }

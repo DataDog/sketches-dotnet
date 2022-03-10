@@ -15,7 +15,7 @@ namespace Datadog.Sketches.Serialization
     /// This class is used to perform protobuf serialization compliant with the official schema used to
     /// generate protobuf bindings (DDSketch.proto) but does not require to reference an external library.
     /// </summary>
-    public class Serializer : IDisposable
+    internal class Serializer : IDisposable
     {
         /// <summary>
         /// Any integer type including booleans

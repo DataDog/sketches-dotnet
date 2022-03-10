@@ -15,7 +15,7 @@ namespace Datadog.Sketches.Stores;
 /// DenseStore is a dynamically growing contiguous (non-sparse) store.
 /// The number of bins are bound only by the size of the slice that can be allocated.
 /// </summary>
-public abstract class DenseStore : Store
+public abstract class DenseStore : Store, ISerializable
 {
     private const int DefaultArrayLengthGrowthIncrement = 64;
     private const double DefaultArrayLengthOverheadRatio = 0.1;
@@ -210,7 +210,7 @@ public abstract class DenseStore : Store
     }
 
     /// <inheritdoc />
-    public override int ComputeSerializedSize()
+    int ISerializable.ComputeSerializedSize()
     {
         if (IsEmpty())
         {
@@ -222,7 +222,7 @@ public abstract class DenseStore : Store
     }
 
     /// <inheritdoc />
-    public override void Serialize(Serializer serializer)
+    void ISerializable.Serialize(Serializer serializer)
     {
         if (IsEmpty())
         {

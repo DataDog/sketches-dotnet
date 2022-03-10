@@ -4,6 +4,8 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Datadog.Sketches.Mappings;
 using FluentAssertions;
 using NUnit.Framework;
@@ -23,12 +25,7 @@ public class LogarithmicMappingTests
     [Test]
     public void TestAccuracy()
     {
-        for (var relativeAccuracy = MaxTestedRelativeAccuracy;
-            relativeAccuracy >= MinTestedRelativeAccuracy;
-            relativeAccuracy *= MaxTestedRelativeAccuracy)
-        {
-            TestAccuracy(new LogarithmicMapping(relativeAccuracy), relativeAccuracy);
-        }
+        Parallel.ForEach(RelativeAccuracyRange(), relativeAccuracy => TestAccuracy(new LogarithmicMapping(relativeAccuracy), relativeAccuracy));
 
         foreach (var gamma in TestGammas)
         {
@@ -99,5 +96,15 @@ public class LogarithmicMappingTests
         // If 1 is on a bucket boundary, its associated index can be either of the ones of the previous and the next buckets.
         indexOf1.Should().BeGreaterThanOrEqualTo(Math.Ceiling(indexOffset) - 1);
         indexOf1.Should().BeLessThanOrEqualTo(Math.Floor(indexOffset));
+    }
+
+    private static IEnumerable<double> RelativeAccuracyRange()
+    {
+        for (var relativeAccuracy = MaxTestedRelativeAccuracy;
+            relativeAccuracy >= MinTestedRelativeAccuracy;
+            relativeAccuracy *= MaxTestedRelativeAccuracy)
+        {
+            yield return relativeAccuracy;
+        }
     }
 }

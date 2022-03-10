@@ -7,8 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Datadog.Sketches.Mappings;
 using Datadog.Sketches.Stores;
 using FluentAssertions;
@@ -73,7 +71,7 @@ namespace Datadog.Sketches.Tests
 
         private void AssertEquals(DDSketch sketch, byte[] buffer)
         {
-            var protoSketch = ToProto(sketch);
+            var protoSketch = ProtobufHelpers.ToProto(sketch);
 
             using (var stream = new MemoryStream())
             {
@@ -86,7 +84,7 @@ namespace Datadog.Sketches.Tests
             }
 
             var deserialized = DDSketchProto.DDSketchProto.Parser.ParseFrom(buffer);
-            var recovered = FromProto(deserialized, () => new UnboundedSizeDenseStore());
+            var recovered = ProtobufHelpers.FromProto(deserialized, () => new UnboundedSizeDenseStore());
 
             recovered.GetCount().Should().BeApproximately(sketch.GetCount(), RelativeAccuracyTester.FloatingPointAcceptableError);
             recovered.IndexMapping.RelativeAccuracy.Should().BeApproximately(
@@ -94,79 +92,6 @@ namespace Datadog.Sketches.Tests
 
             recovered.PositiveValueStore.Should().Equal(sketch.PositiveValueStore);
             recovered.NegativeValueStore.Should().Equal(sketch.NegativeValueStore);
-        }
-
-        private DDSketch FromProto(DDSketchProto.DDSketchProto sketch, Func<Store> storeFactory)
-        {
-            return new DDSketch(
-                FromProto(sketch.Mapping),
-                FromProto(sketch.NegativeValues, storeFactory),
-                FromProto(sketch.PositiveValues, storeFactory),
-                minIndexedValue: 0,
-                zeroCount: sketch.ZeroCount);
-        }
-
-        private IIndexMapping FromProto(DDSketchProto.IndexMapping mapping)
-            => new LogarithmicMapping(mapping.Gamma, mapping.IndexOffset);
-
-        private Store FromProto(DDSketchProto.Store store, Func<Store> storeFactory)
-        {
-            var result = storeFactory();
-
-            foreach (var element in store.BinCounts)
-            {
-                result.Add(element.Key, element.Value);
-            }
-
-            var index = store.ContiguousBinIndexOffset;
-
-            foreach (var value in store.ContiguousBinCounts)
-            {
-                result.Add(index++, value);
-            }
-
-            return result;
-        }
-
-        private DDSketchProto.DDSketchProto ToProto(DDSketch sketch)
-        {
-            return new DDSketchProto.DDSketchProto
-            {
-                PositiveValues = ToProto(sketch.PositiveValueStore),
-                NegativeValues = ToProto(sketch.NegativeValueStore),
-                ZeroCount = sketch.ZeroCount,
-                Mapping = ToProto(sketch.IndexMapping)
-            };
-        }
-
-        private DDSketchProto.IndexMapping ToProto(IIndexMapping mapping)
-        {
-            var logMapping = (LogarithmicMapping)mapping;
-
-            return new DDSketchProto.IndexMapping
-            {
-                Gamma = logMapping.Gamma,
-                IndexOffset = logMapping.IndexOffset,
-                Interpolation = DDSketchProto.IndexMapping.Types.Interpolation.None
-            };
-        }
-
-        private DDSketchProto.Store ToProto(Store store)
-        {
-            var denseStore = (DenseStore)store;
-
-            var protoStore = new DDSketchProto.Store();
-
-            if (!store.IsEmpty())
-            {
-                protoStore.ContiguousBinIndexOffset = denseStore.MinIndex;
-
-                protoStore.ContiguousBinCounts.AddRange(denseStore.Counts
-                    .Skip(denseStore.MinIndex - denseStore.Offset)
-                    .Take(denseStore.MaxIndex - denseStore.MinIndex + 1));
-            }
-
-            return protoStore;
         }
     }
 }

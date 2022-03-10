@@ -105,7 +105,7 @@ namespace Datadog.Sketches.Serialization
             }
         }
 
-        public void WriteUnsignedInt32(int fieldIndex, int value)
+        public void WriteUnsignedInt32(int fieldIndex, uint value)
         {
             if (value != 0)
             {
@@ -123,17 +123,13 @@ namespace Datadog.Sketches.Serialization
             }
         }
 
-        private static int TagSize(int tag, int type)
-        {
-            unchecked
-            {
-                return VarIntLength((tag << 3) | type) + 1;
-            }
-        }
+        private static int TagSize(int tag, int type) => VarIntLength((tag << 3) | type) + 1;
 
         private static int ZigZag(int signed) => (signed << 1) ^ (signed >> 31);
 
-        private static int VarIntLength(int value) => VarIntLengths32[NumberOfLeadingZeros(unchecked((uint)value))];
+        private static int VarIntLength(int value) => VarIntLength(unchecked((uint)value));
+
+        private static int VarIntLength(uint value) => VarIntLengths32[NumberOfLeadingZeros(value)];
 
         /// <summary>
         /// C# implementation of Java Integer.numberOfLeadingZeros
@@ -187,7 +183,9 @@ namespace Datadog.Sketches.Serialization
             WriteVarInt((fieldIndex << 3) | wireType);
         }
 
-        private void WriteVarInt(int value)
+        private void WriteVarInt(int value) => WriteVarInt(unchecked((uint)value));
+
+        private void WriteVarInt(uint value)
         {
             var length = VarIntLength(value);
 

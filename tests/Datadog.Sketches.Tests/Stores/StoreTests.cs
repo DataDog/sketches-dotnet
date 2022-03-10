@@ -5,7 +5,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using Datadog.Sketches.Serialization;
 using Datadog.Sketches.Stores;
 using FluentAssertions;
 using NUnit.Framework;
@@ -321,6 +323,17 @@ public abstract class StoreTests
         var expectedNonZeroCounts = GetNonZeroCounts(GetCounts(bins));
         AssertEncodes(expectedNonZeroCounts, store);
 
-        // TODO: Test protobuf round-trip
+        AssertEncodes(
+            expectedNonZeroCounts,
+            ProtobufHelpers.FromProto(ProtobufHelpers.ToProto(store), NewStore));
+
+        using var stream = new MemoryStream();
+        using var serializer = new Serializer(stream);
+
+        ((ISerializable)store).Serialize(serializer);
+
+        AssertEncodes(
+            expectedNonZeroCounts,
+            ProtobufHelpers.FromProto(DDSketchProto.Store.Parser.ParseFrom(stream.ToArray()), NewStore));
     }
 }

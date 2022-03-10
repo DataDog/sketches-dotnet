@@ -3,8 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
-#pragma warning disable SA1600 // Elements should be documented
-
 using System;
 using System.IO;
 using System.Text;
@@ -61,11 +59,6 @@ namespace Datadog.Sketches.Serialization
             return value == 0 ? 0 : (TagSize(fieldIndex, VarInt) + VarIntLength(value) + 1);
         }
 
-        public static int EmbeddedFieldSize(int fieldIndex, int size)
-        {
-            return TagSize(fieldIndex, LengthDelimited) + EmbeddedSize(size);
-        }
-
         public static int DoubleFieldSize(int fieldIndex, double value)
         {
             return value == 0D ? 0 : (TagSize(fieldIndex, Fixed64) + sizeof(double));
@@ -79,11 +72,6 @@ namespace Datadog.Sketches.Serialization
         public static int CompactDoubleArraySize(int fieldIndex, int size)
         {
             return TagSize(fieldIndex, LengthDelimited) + EmbeddedSize(size * sizeof(double));
-        }
-
-        public static int BinSize(int fieldPosition, int index, double count)
-        {
-            return EmbeddedFieldSize(fieldPosition, SignedIntFieldSize(1, index) + DoubleFieldSize(2, count));
         }
 
         public void Dispose()
@@ -133,14 +121,6 @@ namespace Datadog.Sketches.Serialization
                 WriteTag(fieldIndex, VarInt);
                 WriteVarInt(ZigZag(value));
             }
-        }
-
-        public void WriteBin(int fieldPosition, int index, double count)
-        {
-            var length = SignedIntFieldSize(1, index) + DoubleFieldSize(2, count);
-            WriteHeader(fieldPosition, length);
-            WriteSignedInt32(1, index);
-            WriteDouble(2, count);
         }
 
         private static int TagSize(int tag, int type)

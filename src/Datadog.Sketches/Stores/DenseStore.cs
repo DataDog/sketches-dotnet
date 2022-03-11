@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Sketches.Serialization;
 
 namespace Datadog.Sketches.Stores;
 
@@ -14,7 +15,7 @@ namespace Datadog.Sketches.Stores;
 /// DenseStore is a dynamically growing contiguous (non-sparse) store.
 /// The number of bins are bound only by the size of the slice that can be allocated.
 /// </summary>
-public abstract class DenseStore : Store
+public abstract class DenseStore : Store, ISerializable
 {
     private const int DefaultArrayLengthGrowthIncrement = 64;
     private const double DefaultArrayLengthOverheadRatio = 0.1;
@@ -83,22 +84,22 @@ public abstract class DenseStore : Store
     /// <summary>
     /// Gets or sets the minimum bin index
     /// </summary>
-    protected int MinIndex { get; set; }
+    protected internal int MinIndex { get; set; }
 
     /// <summary>
     /// Gets or sets the maximum bin index
     /// </summary>
-    protected int MaxIndex { get; set; }
+    protected internal int MaxIndex { get; set; }
 
     /// <summary>
     /// Gets or sets the offset to get the <see cref="Counts"/> index
     /// </summary>
-    protected int Offset { get; set; }
+    protected internal int Offset { get; set; }
 
     /// <summary>
     /// Gets the storage for the value of the bins
     /// </summary>
-    protected double[] Counts { get; private set; }
+    protected internal double[] Counts { get; private set; }
 
     /// <inheritdoc />
     public override IEnumerator<Bin> GetEnumerator() => EnumerateAscending().GetEnumerator();
@@ -206,6 +207,30 @@ public abstract class DenseStore : Store
                 yield return new Bin(i, count);
             }
         }
+    }
+
+    /// <inheritdoc />
+    int ISerializable.ComputeSerializedSize()
+    {
+        if (IsEmpty())
+        {
+            return 0;
+        }
+
+        return Serializer.CompactDoubleArraySize(2, MaxIndex - MinIndex + 1)
+            + Serializer.SignedIntFieldSize(3, MinIndex);
+    }
+
+    /// <inheritdoc />
+    void ISerializable.Serialize(Serializer serializer)
+    {
+        if (IsEmpty())
+        {
+            return;
+        }
+
+        serializer.WriteCompactArray(2, Counts, MinIndex - Offset, MaxIndex - MinIndex + 1);
+        serializer.WriteSignedInt32(3, MinIndex);
     }
 
     /// <summary>

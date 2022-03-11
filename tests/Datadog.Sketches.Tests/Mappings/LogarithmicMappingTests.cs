@@ -5,8 +5,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using Datadog.Sketches.Mappings;
+using Datadog.Sketches.Serialization;
 using FluentAssertions;
 using NUnit.Framework;
 
@@ -53,15 +55,17 @@ public class LogarithmicMappingTests
     [Test]
     public void TestProtoRoundTrip()
     {
-        // TODO: Add test when serialization is implemented
-        Assert.Inconclusive();
-    }
+        var mapping = new LogarithmicMapping(1e-2);
+        AssertSameAfterProtoRoundTrip(mapping, ProtobufHelpers.FromProto(ProtobufHelpers.ToProto(mapping)));
 
-    [Test]
-    public void TestEncodeDecode()
-    {
-        // TODO: Add test when serialization is implemented
-        Assert.Inconclusive();
+        using var stream = new MemoryStream();
+        using var serializer = new Serializer(stream);
+
+        ((ISerializable)mapping).Serialize(serializer);
+
+        AssertSameAfterProtoRoundTrip(
+            mapping,
+            ProtobufHelpers.FromProto(DDSketchProto.IndexMapping.Parser.ParseFrom(stream.ToArray())));
     }
 
     private static void AssertRelativelyAccurate(IIndexMapping mapping, double value)
@@ -96,6 +100,13 @@ public class LogarithmicMappingTests
         // If 1 is on a bucket boundary, its associated index can be either of the ones of the previous and the next buckets.
         indexOf1.Should().BeGreaterThanOrEqualTo(Math.Ceiling(indexOffset) - 1);
         indexOf1.Should().BeLessThanOrEqualTo(Math.Floor(indexOffset));
+    }
+
+    private static void AssertSameAfterProtoRoundTrip(IIndexMapping mapping, IIndexMapping roundTripMapping)
+    {
+        roundTripMapping.Should().BeOfType(mapping.GetType());
+        roundTripMapping.RelativeAccuracy.Should().BeApproximately(mapping.RelativeAccuracy, RelativeAccuracyTester.FloatingPointAcceptableError);
+        roundTripMapping.GetValue(0).Should().BeApproximately(mapping.GetValue(0), RelativeAccuracyTester.FloatingPointAcceptableError);
     }
 
     private static IEnumerable<double> RelativeAccuracyRange()

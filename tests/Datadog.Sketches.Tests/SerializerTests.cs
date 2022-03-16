@@ -71,6 +71,8 @@ namespace Datadog.Sketches.Tests
 
         private void AssertEquals(DDSketch sketch, byte[] buffer)
         {
+            sketch.ComputeSerializedSize().Should().Be(buffer.Length);
+
             var protoSketch = ProtobufHelpers.ToProto(sketch);
 
             using (var stream = new MemoryStream())

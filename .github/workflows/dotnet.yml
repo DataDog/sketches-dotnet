@@ -5,6 +5,7 @@ on: [push]
 env:
   DD_CIVISIBILITY_AGENTLESS_ENABLED: "true"
   DD_SITE: "datadoghq.com"
+  DD_API_KEY: ${{ secrets.DD_API_KEY }}
 
 jobs:
   build:

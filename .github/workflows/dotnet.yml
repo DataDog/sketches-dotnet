@@ -2,6 +2,11 @@ name: .NET
 
 on: [push]
 
+env:
+  DD_CIVISIBILITY_AGENTLESS_ENABLED: "true"
+  DD_SITE: "datadoghq.com"
+  DD_API_KEY: ${{ secrets.DD_API_KEY }}
+
 jobs:
   build:
 
@@ -26,6 +31,9 @@ jobs:
       with:
         dotnet-version: 2.1
 
+    - name: "Install dd-tool"
+      run: dotnet tool install -g dd-trace
+
     - name: Install dependencies
       run: dotnet restore Datadog.Sketches.sln
 
@@ -33,5 +41,5 @@ jobs:
       run: dotnet build Datadog.Sketches.sln --configuration Release --no-restore
 
     - name: Test
-      run: dotnet test Datadog.Sketches.sln --configuration Release --no-restore --no-build --verbosity normal
+      run: dd-trace ci run --dd-service=dd-sketch-dotnet --dd-env=ci -- dotnet test Datadog.Sketches.sln --configuration Release --no-restore --no-build --verbosity normal
  

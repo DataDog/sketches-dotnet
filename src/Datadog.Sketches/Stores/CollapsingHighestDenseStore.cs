@@ -34,7 +34,7 @@ public class CollapsingHighestDenseStore : CollapsingDenseStore
         }
         else
         {
-            foreach (var bin in EnumerateAscending())
+            foreach (var bin in store.EnumerateAscending())
             {
                 Add(bin);
             }

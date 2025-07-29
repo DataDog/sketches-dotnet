@@ -161,6 +161,17 @@ public abstract class StoreTests
     }
 
     [Test]
+    public void TestMergingDifferentStoreTypes()
+    {
+        var clHist = new CollapsingLowestDenseStore(1);
+        var chHist = new CollapsingHighestDenseStore(1);
+        clHist.Add(0, 3);
+        chHist.Add(0, 5);
+        clHist.MergeWith(chHist);
+        clHist.Counts[0].Should().Be(8);
+    }
+
+    [Test]
     public void TestCopyingEmpty()
     {
         var store = NewStore();
